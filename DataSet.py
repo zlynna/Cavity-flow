@@ -3,7 +3,7 @@ import tensorflow as tf
 import pandas as pd
 import scipy.io
 
-path = 'F:/project/VScode/data/'
+path = './data/'
 
 class DataSet:
     def __init__(self, x_range, y_range, Nx_train, Ny_train, N_bc):
@@ -163,21 +163,21 @@ class DataSet:
         y_l = self.y_range.min()
 
         # domain data
-        X_data = np.random.random((16000, 1)) * (x_u - x_l) + x_l
-        Y_data = np.random.random((16000, 1)) * (y_u - y_l) + y_l
+        X_data = np.random.random((7000, 1)) * (x_u - x_l) + x_l
+        Y_data = np.random.random((7000, 1)) * (y_u - y_l) + y_l
 
         # boundary data
         # up walll
         x_1 = x
-        y_1 = np.full((1 / dy, 1), y.max())
+        y_1 = np.full((257, 1), y.max())
         # down wall
         x_2 = x
-        y_2 = np.full((1 / dy, 1), y.min())
+        y_2 = np.full((257, 1), y.min())
         # left wall
-        x_3 = np.full((1/dx, 1), x.min())
+        x_3 = np.full((257, 1), x.min())
         y_3 = y
         # right wall
-        x_4 = np.full((1/dx, 1), x.max())
+        x_4 = np.full((257, 1), x.max())
         y_4 = y
 
         x_b = np.vstack((x_1, x_2, x_3, x_4))
