@@ -62,15 +62,9 @@ def main():
     v_y = sess.run(v_y, tf_dict2)
     U_x = sess.run(U_x, tf_dict2)
 
-    #
-    print(U_x)
-    print(rho_x)
-    with tf.Session() as sess:
-        print(U_x.eval())
-        print(rho_x.eval())
 
     # save
-    # scipy.io.savemat('Results/PINN_BGK.mat',{'rho_x': rho_x, 'rho_y': rho_y, 'u_x': u_x, 'u_y': u_y, 'v_x': v_x, 'v_y': v_y})
+    scipy.io.savemat('Results/PINN_BGK.mat',{'rho_x': rho_x, 'rho_y': rho_y, 'u_x': u_x, 'u_y': u_y, 'v_x': v_x, 'v_y': v_y})
 
 if __name__=='__main__':
     main()
