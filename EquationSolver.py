@@ -12,6 +12,8 @@ from Plotting import Plotting
 np.random.seed(1234)
 tf.set_random_seed(1234)
 
+UseLoadNet = False
+
 def main():
     y_range = np.array((0.5/257, 256.5/257))
     x_range = np.array((0.5/257, 256.5/257))
@@ -35,9 +37,9 @@ def main():
     net_neq = Net(x_data, y_data, layers=layers_neq)
 
     [rou_pre, u_pre, v_pre] = net_eq(x_train, y_train)
-    fneq_pre = net_neq(x_train, y_train)
+    fneq_pre = net_neq(x_train, y_train) / 10
     [rou_bc_pre, u_bc_pre, v_bc_pre] = net_eq(x_bc_train, y_bc_train)
-    fneq_bc_pre = net_neq(x_bc_train, y_bc_train)
+    fneq_bc_pre = net_neq(x_bc_train, y_bc_train) / 10
 
     bgk = data.bgk(fneq_pre, rou_pre, u_pre, v_pre, x_train, y_train)
     bgk_bc = data.bgk(fneq_bc_pre, rou_bc_pre, u_bc_pre, v_bc_pre, x_bc_train, y_bc_train)
@@ -45,12 +47,12 @@ def main():
     Eq_res = data.Eq_res(fneq_pre, rou_pre, u_pre, v_pre, x_train, y_train)
 
     # loss
-    loss = tf.reduce_mean(tf.square(u_bc_pre - u_train)) + \
-           tf.reduce_mean(tf.square(v_bc_pre - v_train)) + \
+    loss = tf.reduce_mean(tf.square(u_bc_pre - u_train)) * 1e3 + \
+           tf.reduce_mean(tf.square(v_bc_pre - v_train)) * 1e3 + \
            tf.reduce_mean(tf.square(rou_bc_pre - rho_train)) + \
            tf.reduce_mean(bgk) + \
            tf.reduce_mean(bgk_bc) + \
-           tf.reduce_mean(tf.square(fneq_bc_pre - fneq_train))
+           tf.reduce_mean(tf.square(fneq_bc_pre - fneq_train)) * 10
 
     train_adam = tf.train.AdamOptimizer().minimize(loss)
     train_lbfgs = tf.contrib.opt.ScipyOptimizerInterface(loss,
@@ -68,8 +70,12 @@ def main():
 
     Model = Train(tf_dict)
     start_time = time.perf_counter()
-    #Model.ModelTrain(sess, loss, train_adam, train_lbfgs)
-    Model.LoadModel(sess)
+
+    if UseLoadNet:
+        Model.LoadModel(sess)
+    else:
+        Model.ModelTrain(sess, loss, train_adam, train_lbfgs)
+
     stop_time = time.perf_counter()
     print('Duration time is %.3f seconds' % (stop_time - start_time))
 
