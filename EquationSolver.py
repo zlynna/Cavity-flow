@@ -47,18 +47,23 @@ def main():
     Eq_res = data.Eq_res(fneq_pre, rou_pre, u_pre, v_pre, x_train, y_train)
 
     # loss
-    loss = tf.reduce_mean(tf.square(u_bc_pre - u_train)) * 1e3 + \
+    loss = tf.reduce_mean(tf.square(u_bc_pre - u_train)) * 5 + \
            tf.reduce_mean(tf.square(v_bc_pre - v_train)) * 1e3 + \
            tf.reduce_mean(tf.square(rou_bc_pre - rho_train)) + \
            tf.reduce_mean(bgk) + \
            tf.reduce_mean(bgk_bc) + \
            tf.reduce_mean(tf.square(fneq_bc_pre - fneq_train)) * 10
 
-    train_adam = tf.train.AdamOptimizer().minimize(loss)
+    start_lr = 1e-3
+    learning_rate = tf.train.exponential_decay(start_lr, global_step=5e4, decay_rate=1-5e-3, decay_steps=500)
+    train_adam = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
     train_lbfgs = tf.contrib.opt.ScipyOptimizerInterface(loss,
                                                          method="L-BFGS-B",
                                                          options={'maxiter': 50000,
-                                                                  'ftol': 1.0 * np.finfo(float).eps
+                                                                  'maxfun': 70000,
+                                                                  'maxcor': 100,
+                                                                  'maxls': 100,
+                                                                  'ftol': 10.0 * np.finfo(float).eps
                                                                   }
                                                          )
     sess = tf.Session()
