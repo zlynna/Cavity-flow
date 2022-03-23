@@ -17,11 +17,11 @@ class DataSet:
         self.w[0] = 4 / 9
         self.w[1:5] = 1 / 9
         self.w[5:] = 1 / 36
-        self.RT = 100
+        self.RT = 1/3
         self.xi = self.e * np.sqrt(3 * self.RT)
         self.uw = 0.1
         self.Re = 400.0
-        self.L = 1.
+        self.L = 257
         self.tau = 3 * self.L * self.uw / self.Re + 0.5
 
         self.sess = tf.Session()
@@ -48,11 +48,11 @@ class DataSet:
 
     # difference of f_eq for x, y
     def dfeq_xy(self, rou, u, v, rou_x, rou_y, u_x, v_x, u_y, v_y, i):
-        feq_x = self.w[i, :] * rou_x * (1 + (self.xi[i, 0] * u + self.xi[i, 1] * v) / self.RT + (self.xi[i, 0] * u + self.xi[i, 1] * v) ** 2 / 2 / self.RT ** 2 - (u ** 2 + v ** 2) / 2 / self.RT) + \
-                self.w[i, :] * rou * ((self.xi[i, 0] * u_x + self.xi[i, 1] * v_x) / self.RT + (self.xi[i, 0] * u + self.xi[i, 1] * v) * (self.xi[i, 0] * u_x + self.xi[i, 1] * v_x) / self.RT ** 2 - (u * u_x + v * v_x) / self.RT)
+        feq_x = self.w[i, :] * rou_x * (1 + (self.xi[i, 0] * u + self.xi[i, 1] * v) * 3 + (self.xi[i, 0] * u + self.xi[i, 1] * v) ** 2 * 4.5 - (u ** 2 + v ** 2) * 1.5) + \
+                self.w[i, :] * rou * ((self.xi[i, 0] * u_x + self.xi[i, 1] * v_x) * 3 + (self.xi[i, 0] * u + self.xi[i, 1] * v) * (self.xi[i, 0] * u_x + self.xi[i, 1] * v_x) * 9 - (u * u_x + v * v_x) * 3)
         # here need to change the equations
-        feq_y = self.w[i, :] * rou_y * (1 + (self.xi[i, 0] * u + self.xi[i, 1] * v) / self.RT + (self.xi[i, 0] * u + self.xi[i, 1] * v) ** 2 / 2 / self.RT ** 2 - (u ** 2 + v ** 2) / 2 / self.RT) + \
-                self.w[i, :] * rou * ((self.xi[i, 0] * u_y + self.xi[i, 1] * v_y) / self.RT + (self.xi[i, 0] * u + self.xi[i, 1] * v) * (self.xi[i, 0] * u_y + self.xi[i, 1] * v_y) / self.RT ** 2 - (u * u_y + v * v_y) / self.RT)
+        feq_y = self.w[i, :] * rou_y * (1 + (self.xi[i, 0] * u + self.xi[i, 1] * v) * 3 + (self.xi[i, 0] * u + self.xi[i, 1] * v) ** 2 * 4.5 - (u ** 2 + v ** 2) * 1.5) + \
+                self.w[i, :] * rou * ((self.xi[i, 0] * u_y + self.xi[i, 1] * v_y) * 3 + (self.xi[i, 0] * u + self.xi[i, 1] * v) * (self.xi[i, 0] * u_y + self.xi[i, 1] * v_y) * 9 - (u * u_y + v * v_y) * 3)
         dfeq_xy = self.xi[i, 0] * feq_x + self.xi[i, 1] * feq_y
         return dfeq_xy
 
@@ -66,7 +66,7 @@ class DataSet:
 
     # f_eq equation
     def f_eqk(self, rou, u, v, k):
-        f_eqk = self.w[k, :] * rou * (1 + (self.xi[k, 0]*u + self.xi[k, 1]*v) / self.RT + (self.xi[k, 0]*u + self.xi[k, 1]*v) ** 2 / 2 / self.RT ** 2 - (u*u + v*v) / 2 / self.RT)
+        f_eqk = self.w[k, :] * rou * (1 + (self.xi[k, 0]*u + self.xi[k, 1]*v) * 3 + (self.xi[k, 0]*u + self.xi[k, 1]*v) ** 2 * 4.5 - (u*u + v*v) * 1.5)
         return f_eqk
 
     # the mean pde
@@ -116,19 +116,11 @@ class DataSet:
 
         return R_sum
 
-    def fneq_train(self, u, v, rho):
-        data = scipy.io.loadmat('Results/PINN_BGK.mat')
-        rho_x = data['rho_x']
-        rho_y = data['rho_y']
-        u_x = data['u_x']
-        u_y = data['u_y']
-        v_x = data['v_x']
-        v_y = data['v_y']
+    def fneq_train(self):
+        data_fneq = pd.read_table('Results/fneq.dat', sep=' ', header=None, engine='python')
+        fneq = np.array(data_fneq)
 
-        fneq = -self.tau * self.feq_xy(rho, u, v, rho_x, rho_y, u_x, v_x, u_y, v_y)
-        fneq = fneq.eval(session=self.sess)
-
-        return fneq
+        return fneq[:, :-1]
 
     def LoadData(self):
         data_rho = pd.read_table(path + 'rho.dat', sep=' ', header=None, engine='python')
@@ -187,6 +179,6 @@ class DataSet:
         v_data = np.hstack((v[-1, :], v[0, :], v[:, 0], v[:, -1]))[:, None]
         rho_data = np.hstack((rho[-1, :], rho[0, :], rho[:, 0], rho[:, -1]))[:, None]
 
-        fneq_data = self.fneq_train(u_data, v_data, rho_data)
+        fneq_data = self.fneq_train()
 
         return X_data, Y_data, x_b, y_b, u_data, v_data, rho_data, fneq_data
