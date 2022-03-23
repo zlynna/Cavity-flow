@@ -37,9 +37,9 @@ def main():
     net_neq = Net(x_data, y_data, layers=layers_neq)
 
     [rou_pre, u_pre, v_pre] = net_eq(x_train, y_train)
-    fneq_pre = net_neq(x_train, y_train) / 10
+    fneq_pre = net_neq(x_train, y_train) / 1e3
     [rou_bc_pre, u_bc_pre, v_bc_pre] = net_eq(x_bc_train, y_bc_train)
-    fneq_bc_pre = net_neq(x_bc_train, y_bc_train) / 10
+    fneq_bc_pre = net_neq(x_bc_train, y_bc_train) / 1e3
 
     bgk = data.bgk(fneq_pre, rou_pre, u_pre, v_pre, x_train, y_train)
     bgk_bc = data.bgk(fneq_bc_pre, rou_bc_pre, u_bc_pre, v_bc_pre, x_bc_train, y_bc_train)
@@ -52,7 +52,7 @@ def main():
            tf.reduce_mean(tf.square(rou_bc_pre - rho_train)) + \
            tf.reduce_mean(bgk) + \
            tf.reduce_mean(bgk_bc) + \
-           tf.reduce_mean(tf.square(fneq_bc_pre - fneq_train)) * 10
+           tf.reduce_mean(tf.square(fneq_bc_pre - fneq_train)) * 1e6
 
     start_lr = 1e-3
     learning_rate = tf.train.exponential_decay(start_lr, global_step=5e4, decay_rate=1-5e-3, decay_steps=500)
